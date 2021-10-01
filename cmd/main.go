@@ -2,12 +2,21 @@ package main
 
 import (
     "crypto/tls"
+    "github.com/joho/godotenv"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
     "golang.org/x/crypto/acme"
     "golang.org/x/crypto/acme/autocert"
     "net/http"
+    "os"
+    "time"
 )
+
+const AppEnvFilename = "app.env"
+
+func load() error {
+    return godotenv.Load(AppEnvFilename)
+}
 
 func main() {
     e := echo.New()
@@ -20,12 +29,18 @@ func main() {
 		`)
     })
 
+    err := load()
+    if err != nil {
+        e.Logger.Error(err)
+    }
+
     autoTLSManager := autocert.Manager{
         Prompt: autocert.AcceptTOS,
         // Cache certificates to avoid issues with rate limits (https://letsencrypt.org/docs/rate-limits)
         Cache: autocert.DirCache("/var/www/.cache"),
-        //HostPolicy: autocert.HostWhitelist("<DOMAIN>"),
+        HostPolicy: autocert.HostWhitelist(),
     }
+    autocert.HostWhitelist(os.Getenv("DOMAIN"))
     s := http.Server{
         Addr:    ":443",
         Handler: e, // set Echo as handler
@@ -34,7 +49,7 @@ func main() {
             GetCertificate: autoTLSManager.GetCertificate,
             NextProtos:     []string{acme.ALPNProto},
         },
-        //ReadTimeout: 30 * time.Second, // use custom timeouts
+        ReadTimeout: 30 * time.Second, // use custom timeouts
     }
     if err := s.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
         e.Logger.Fatal(err)

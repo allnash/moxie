@@ -1,7 +1,5 @@
 package models
 
-type (
-	Host struct {
-		Name string
-	}
-)
+type Host struct {
+    Name string
+}
