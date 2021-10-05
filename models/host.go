@@ -1,5 +1,7 @@
 package models
 
+import "github.com/labstack/echo/v4"
+
 type Host struct {
-    Name string
+    Echo *echo.Echo
 }
