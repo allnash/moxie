@@ -22,3 +22,22 @@ clean:
 	@find . -name '*~' | xargs rm -fv
 	@rm -rvf moxie_win.exe moxie_osx moxie
  
+install: install_linux
+
+.PHONY: moxie_install_linux
+install_linux:
+	@cp builds/moxie /usr/sbin/moxie
+	@mkdir /etc/moxie
+	@cp app.env /etc/moxie
+	@echo "[Unit]\
+          Description=Moxie the Reverse Proxy\
+          \
+          [Service]\
+          Type=simple\
+          Restart=always\
+          RestartSec=5s\
+          ExecStart=/usr/sbin/moxie\
+		  \
+          [Install]\
+          WantedBy=multi-user.target"
+
