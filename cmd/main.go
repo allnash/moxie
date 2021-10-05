@@ -13,7 +13,7 @@ import (
     "time"
 )
 
-const AppEnvFilename = "app.env"
+const AppEnvFilename = "/etc/moxie/app.env"
 
 func load() error {
     return godotenv.Load(AppEnvFilename)
