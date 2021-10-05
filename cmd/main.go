@@ -91,12 +91,12 @@ func main() {
     //}
     //e.Use(middleware.Proxy(middleware.NewRoundRobinBalancer(apiTargets)))
 
-    e.GET("/", func(c echo.Context) error {
-        return c.HTML(http.StatusOK, `
-			<h1>Welcome to Echo!</h1>
-			<h3>TLS certificates automatically installed from Let's Encrypt :)</h3>
-		`)
-    })
+    //e.GET("/", func(c echo.Context) error {
+    //    return c.HTML(http.StatusOK, `
+	//		<h1>Welcome to Echo!</h1>
+	//		<h3>TLS certificates automatically installed from Let's Encrypt :)</h3>
+	//	`)
+    //})
 
     autoTLSManager := autocert.Manager{
         Prompt: autocert.AcceptTOS,
