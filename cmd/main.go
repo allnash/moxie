@@ -41,7 +41,7 @@ func main() {
     api.Use(middleware.Logger())
     api.Use(middleware.Recover())
 
-    hosts[os.Getenv("API")] = &models.Host{Echo: api}
+    hosts[os.Getenv("API_DOMAIN")] = &models.Host{Echo: api}
 
     api.GET("/", func(c echo.Context) error {
         return c.String(http.StatusOK, "API")
