@@ -39,5 +39,5 @@ install_linux:
           ExecStart=/usr/sbin/moxie\
 		  \
           [Install]\
-          WantedBy=multi-user.target"
+          WantedBy=multi-user.target" > /lib/systemd/system/moxie-proxy.service
 
