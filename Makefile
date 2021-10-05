@@ -31,17 +31,7 @@ install_linux:
 	@mkdir -p /etc/moxie
 	@mkdir -p /var/log/moxie
 	@cp app.env /etc/moxie
-	@echo "[Unit]\
-          Description=Moxie the Reverse Proxy\
-          \
-          [Service]\
-          Type=simple\
-          Restart=always\
-          RestartSec=5s\
-          ExecStart=/usr/sbin/moxie\
-		  \
-          [Install]\
-          WantedBy=multi-user.target" > /lib/systemd/system/moxie-proxy.service
-	@echo "Start Moxie service using \
-		   sudo service moxie-proxy start"
+	@printf "[Unit]\nDescription=Moxie the Reverse Proxy\n\n[Service]\nType=simple\nRestart=always\n\RestartSec=5s\nExecStart=/usr/sbin/moxie\n\n[Install]\nWantedBy=multi-user.target\n" > /lib/systemd/system/moxie-proxy.service
+	@echo "Start Moxie service using"
+	@echo "$> sudo service moxie-proxy start"
 
