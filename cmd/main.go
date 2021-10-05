@@ -38,9 +38,8 @@ func main() {
         Prompt: autocert.AcceptTOS,
         // Cache certificates to avoid issues with rate limits (https://letsencrypt.org/docs/rate-limits)
         Cache: autocert.DirCache("/var/www/.cache"),
-        HostPolicy: autocert.HostWhitelist(),
+        HostPolicy: autocert.HostWhitelist(os.Getenv("DOMAIN")),
     }
-    autocert.HostWhitelist(os.Getenv("DOMAIN"))
     s := http.Server{
         Addr:    ":443",
         Handler: e, // set Echo as handler
