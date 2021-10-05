@@ -30,6 +30,7 @@ install_linux:
 	@cp -f builds/moxie /usr/sbin/moxie
 	@mkdir -p /etc/moxie
 	@mkdir -p /var/log/moxie
+	@mkdir -p /var/www/html
 	@cp -n app.env /etc/moxie
 	@printf "[Unit]\nDescription=Moxie the Reverse Proxy\n\n[Service]\nType=simple\nRestart=always\n\RestartSec=5s\nExecStart=/usr/sbin/moxie\n\n[Install]\nWantedBy=multi-user.target\n" > /lib/systemd/system/moxie-proxy.service
 	@echo "Start Moxie service using"

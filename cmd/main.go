@@ -51,15 +51,15 @@ func main() {
     // Asset
     //------
 
-    blog := echo.New()
-    blog.Use(middleware.Logger())
-    blog.Use(middleware.Recover())
+    assets := echo.New()
+    assets.Use(middleware.Logger())
+    assets.Use(middleware.Recover())
+    assets.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+        Root:   os.Getenv("ASSET_DIRECTORY"),
+        Browse: true,
+    }))
 
-    hosts[os.Getenv("ASSET_DOMAIN")] = &models.Host{Echo: blog}
-
-    blog.GET("/", func(c echo.Context) error {
-        return c.String(http.StatusOK, "ASSET")
-    })
+    hosts[os.Getenv("ASSET_DOMAIN")] = &models.Host{Echo: assets}
 
     // Server
     e.Pre(middleware.HTTPSRedirect())
