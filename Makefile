@@ -26,8 +26,10 @@ install: install_linux
 
 .PHONY: moxie_install_linux
 install_linux:
+	@echo "Installing Moxie Proxy to /usr/sbin/moxie directory"
 	@cp builds/moxie /usr/sbin/moxie
-	@mkdir /etc/moxie
+	@mkdir -p /etc/moxie
+	@mkdir -p /var/log/moxie
 	@cp app.env /etc/moxie
 	@echo "[Unit]\
           Description=Moxie the Reverse Proxy\
@@ -40,4 +42,6 @@ install_linux:
 		  \
           [Install]\
           WantedBy=multi-user.target" > /lib/systemd/system/moxie-proxy.service
+	@echo "Start Moxie service using \
+		   sudo service moxie-proxy start"
 
