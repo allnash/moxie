@@ -142,7 +142,7 @@ func customGenerator() string {
 // ServerHeader middleware adds a `Server` header to the response.
 func expiresServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
     return func(c echo.Context) error {
-        c.Response().Header().Set("Expires", string(10000))
+        c.Response().Header().Set("Cache-Control", "max-age=3600")
         return next(c)
     }
 }
