@@ -1,6 +1,7 @@
 package main
 
 import (
+    "context"
     "crypto/tls"
     "github.com/allnash/moxie/models"
     "github.com/joho/godotenv"
@@ -10,6 +11,7 @@ import (
     "golang.org/x/crypto/acme/autocert"
     "net/http"
     "os"
+    "os/signal"
     "time"
 )
 
@@ -38,11 +40,14 @@ func main() {
     //-----
 
     api := echo.New()
+    api.Pre(middleware.HTTPSRedirect())
     api.Use(middleware.Logger())
     api.Use(middleware.Recover())
     api.Use(middleware.GzipWithConfig(middleware.GzipConfig{
         Level: 5,
     }))
+    api.Use(middleware.BodyLimit("10M"))
+    // Add to Hosts
     hosts[os.Getenv("API_DOMAIN")] = &models.Host{Echo: api}
 
     api.GET("/", func(c echo.Context) error {
@@ -54,20 +59,21 @@ func main() {
     //------
 
     assets := echo.New()
+    assets.Pre(middleware.HTTPSRedirect())
     assets.Use(middleware.Logger())
     assets.Use(middleware.Recover())
     assets.Use(middleware.GzipWithConfig(middleware.GzipConfig{
         Level: 5,
     }))
+    assets.Use(middleware.BodyLimit("10M"))
     assets.Use(middleware.StaticWithConfig(middleware.StaticConfig{
         Root:   os.Getenv("ASSET_DIRECTORY"),
         Browse: true,
     }))
-
+    // Add to Hosts
     hosts[os.Getenv("ASSET_DOMAIN")] = &models.Host{Echo: assets}
 
     // Server
-    e.Pre(middleware.HTTPSRedirect())
     e.Use(middleware.Recover())
     e.Use(middleware.Logger())
     e.Any("/*", func(c echo.Context) (err error) {
@@ -84,42 +90,39 @@ func main() {
         return
     })
 
-    //// Set up Proxy
-    //proxy, err := url.Parse("http://localhost:8000")
-    //if err != nil {
-    //    e.Logger.Fatal(err)
-    //}
-    //apiTargets := []*middleware.ProxyTarget{
-    //    {
-    //        URL: proxy,
-    //    },
-    //}
-    //e.Use(middleware.Proxy(middleware.NewRoundRobinBalancer(apiTargets)))
-
-    //e.GET("/", func(c echo.Context) error {
-    //    return c.HTML(http.StatusOK, `
-	//		<h1>Welcome to Echo!</h1>
-	//		<h3>TLS certificates automatically installed from Let's Encrypt :)</h3>
-	//	`)
-    //})
-
     autoTLSManager := autocert.Manager{
         Prompt: autocert.AcceptTOS,
         // Cache certificates to avoid issues with rate limits (https://letsencrypt.org/docs/rate-limits)
         Cache: autocert.DirCache("/var/www/.cache"),
         HostPolicy: autocert.HostWhitelist(os.Getenv("API_DOMAIN"), os.Getenv("ASSET_DOMAIN")),
     }
-    s := http.Server{
-        Addr:    ":443",
-        Handler: e, // set Echo as handler
-        TLSConfig: &tls.Config{
-            //Certificates: nil, // <-- s.ListenAndServeTLS will populate this field
-            GetCertificate: autoTLSManager.GetCertificate,
-            NextProtos:     []string{acme.ALPNProto},
-        },
-        ReadTimeout: 30 * time.Second, // use custom timeouts
-    }
-    if err := s.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
+
+    // Start server
+    go func() {
+        s := http.Server{
+            Addr:    ":443",
+            Handler: e, // set Echo as handler
+            TLSConfig: &tls.Config{
+                //Certificates: nil, // <-- s.ListenAndServeTLS will populate this field
+                GetCertificate: autoTLSManager.GetCertificate,
+                NextProtos:     []string{acme.ALPNProto},
+            },
+            ReadTimeout: 30 * time.Second, // use custom timeouts
+        }
+        if err := s.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
+            e.Logger.Fatal(err)
+            e.Logger.Fatal("shutting down the server")
+        }
+    }()
+
+    // Wait for interrupt signal to gracefully shutdown the server with a timeout of 10 seconds.
+    // Use a buffered channel to avoid missing signals as recommended for signal.Notify
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, os.Interrupt)
+    <-quit
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+    if err := e.Shutdown(ctx); err != nil {
         e.Logger.Fatal(err)
     }
 }
