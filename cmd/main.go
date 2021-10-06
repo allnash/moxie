@@ -4,6 +4,7 @@ import (
     "context"
     "crypto/tls"
     "github.com/allnash/moxie/models"
+    guuid "github.com/google/uuid"
     "github.com/joho/godotenv"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
@@ -13,8 +14,6 @@ import (
     "os"
     "os/signal"
     "time"
-    guuid "github.com/google/uuid"
-
 )
 
 const AppEnvFilename = "/etc/moxie/app.env"
@@ -72,6 +71,13 @@ func main() {
     assets.Use(middleware.GzipWithConfig(middleware.GzipConfig{
         Level: 5,
     }))
+    assets.Use(middleware.SecureWithConfig(middleware.SecureConfig{
+        XSSProtection:         "1; mode=block",
+        ContentTypeNosniff:    "nosniff",
+        XFrameOptions:         "",
+        HSTSMaxAge:            3600,
+        ContentSecurityPolicy: "default-src 'self'",
+    }))
     assets.Use(middleware.BodyLimit("10M"))
     assets.Use(middleware.StaticWithConfig(middleware.StaticConfig{
         Root:   os.Getenv("ASSET_DIRECTORY"),
@@ -100,7 +106,7 @@ func main() {
     autoTLSManager := autocert.Manager{
         Prompt: autocert.AcceptTOS,
         // Cache certificates to avoid issues with rate limits (https://letsencrypt.org/docs/rate-limits)
-        Cache: autocert.DirCache("/var/www/.cache"),
+        Cache:      autocert.DirCache("/var/www/.cache"),
         HostPolicy: autocert.HostWhitelist(os.Getenv("API_DOMAIN"), os.Getenv("ASSET_DOMAIN")),
     }
 
