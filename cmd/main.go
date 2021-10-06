@@ -40,7 +40,9 @@ func main() {
     api := echo.New()
     api.Use(middleware.Logger())
     api.Use(middleware.Recover())
-
+    api.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+        Level: 5,
+    }))
     hosts[os.Getenv("API_DOMAIN")] = &models.Host{Echo: api}
 
     api.GET("/", func(c echo.Context) error {
@@ -54,6 +56,9 @@ func main() {
     assets := echo.New()
     assets.Use(middleware.Logger())
     assets.Use(middleware.Recover())
+    assets.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+        Level: 5,
+    }))
     assets.Use(middleware.StaticWithConfig(middleware.StaticConfig{
         Root:   os.Getenv("ASSET_DIRECTORY"),
         Browse: true,
