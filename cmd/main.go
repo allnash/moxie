@@ -71,13 +71,7 @@ func main() {
     assets.Use(middleware.GzipWithConfig(middleware.GzipConfig{
         Level: 5,
     }))
-    assets.Use(middleware.SecureWithConfig(middleware.SecureConfig{
-        XSSProtection:         "1; mode=block",
-        ContentTypeNosniff:    "nosniff",
-        XFrameOptions:         "",
-        HSTSMaxAge:            3600,
-        ContentSecurityPolicy: "default-src 'self'",
-    }))
+    assets.Use(expiresServerHeader)
     assets.Use(middleware.BodyLimit("10M"))
     assets.Use(middleware.StaticWithConfig(middleware.StaticConfig{
         Root:   os.Getenv("ASSET_DIRECTORY"),
@@ -143,4 +137,12 @@ func main() {
 func customGenerator() string {
     id := guuid.New()
     return id.String()
+}
+
+// ServerHeader middleware adds a `Server` header to the response.
+func expiresServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
+    return func(c echo.Context) error {
+        c.Response().Header().Set("Expires", string(10000))
+        return next(c)
+    }
 }
