@@ -1,5 +1,8 @@
 # Go Moxie the Proxy
-Alternative Reverse Proxy to Nginx for Django
+Alternative Reverse Proxy to Nginx for Python Django written in superb `go`
+
+#### Why?
+Nginx is too complicated to operate. I think of nginx as blackberry. It will be replaced one day IMO.
 
 ### Build
 
@@ -27,6 +30,6 @@ Installation will create a file `/etc/moxie/app.env`.
 
 Edit this file for the DOMAINS you wish to serve.
 
-# Is it Fast?
+# Is it `Fast`?
 
 I don't know, someone can run tests! But, its easier to configure than stupid nginx and gets the job done.
