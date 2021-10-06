@@ -1,0 +1,1 @@
+wget -q -O - https://git.io/vQhTU | bash -s -- --version 1.16
