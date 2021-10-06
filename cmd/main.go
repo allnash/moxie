@@ -13,6 +13,8 @@ import (
     "os"
     "os/signal"
     "time"
+    guuid "github.com/google/uuid"
+
 )
 
 const AppEnvFilename = "/etc/moxie/app.env"
@@ -43,6 +45,11 @@ func main() {
     api.Pre(middleware.HTTPSRedirect())
     api.Use(middleware.Logger())
     api.Use(middleware.Recover())
+    api.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
+        Generator: func() string {
+            return customGenerator()
+        },
+    }))
     api.Use(middleware.GzipWithConfig(middleware.GzipConfig{
         Level: 5,
     }))
@@ -125,4 +132,9 @@ func main() {
     if err := e.Shutdown(ctx); err != nil {
         e.Logger.Fatal(err)
     }
+}
+
+func customGenerator() string {
+    id := guuid.New()
+    return id.String()
 }
