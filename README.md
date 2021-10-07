@@ -30,6 +30,10 @@ Installation will create a file `/etc/moxie/app.env`.
 
 Edit this file for the DOMAINS you wish to serve.
 
-# Is it `Fast`?
+### Where are my logs?
+
+Logs are located under `/var/log/moxie/moxie.log`
+
+## Is it `Fast`?
 
 I don't know, someone can run tests! But, its easier to configure than stupid nginx and gets the job done.
