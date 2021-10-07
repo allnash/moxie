@@ -10,6 +10,7 @@ import (
     "github.com/labstack/echo/v4/middleware"
     "golang.org/x/crypto/acme"
     "golang.org/x/crypto/acme/autocert"
+    "gopkg.in/natefinch/lumberjack.v2"
     "net/http"
     "os"
     "os/signal"
@@ -26,6 +27,13 @@ func main() {
 
     // Create Echo server
     e := echo.New()
+    e.Logger.SetOutput(&lumberjack.Logger{
+        Filename:   "/var/log/moxie/moxie.log",
+        MaxSize:    100, // megabytes
+        MaxBackups: 3,
+        MaxAge:     28,   //days
+        Compress:   true, // disabled by default
+    })
 
     // Load ENV
     err := load()
