@@ -2,7 +2,7 @@
 Alternative Reverse Proxy to Nginx for Python Django written in superb `go`
 
 #### Why?
-Nginx is too complicated to operate. I think of nginx as blackberry. It will be replaced one day IMO.
+Nginx is too complicated to operate(for small deployments). I think of nginx as blackberry. It will be replaced one day IMO.
 
 ### Build
 
