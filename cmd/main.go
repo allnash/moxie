@@ -12,6 +12,7 @@ import (
     "golang.org/x/crypto/acme/autocert"
     "gopkg.in/natefinch/lumberjack.v2"
     "net/http"
+    "net/url"
     "os"
     "os/signal"
     "time"
@@ -39,6 +40,8 @@ func main() {
     err := load()
     if err != nil {
         e.Logger.Error(err)
+    } else {
+        e.Logger.Info("Loading moxie config from /etc/moxie/app.env")
     }
 
     // Hosts
@@ -61,12 +64,19 @@ func main() {
         Level: 5,
     }))
     api.Use(middleware.BodyLimit("10M"))
+    // Setup API proxy
+    apiProxyUrl, err := url.Parse(os.Getenv("API_PROXY_HOST"))
+    if err != nil {
+        e.Logger.Fatal(err)
+    }
+    targets := []*middleware.ProxyTarget{
+        {
+            URL: apiProxyUrl,
+        },
+    }
+    api.Use(middleware.Proxy(middleware.NewRoundRobinBalancer(targets)))
     // Add to Hosts
     hosts[os.Getenv("API_DOMAIN")] = &models.Host{Echo: api}
-
-    api.GET("/", func(c echo.Context) error {
-        return c.String(http.StatusOK, "API")
-    })
 
     //------
     // Asset
@@ -125,8 +135,10 @@ func main() {
             ReadTimeout: 30 * time.Second, // use custom timeouts
         }
         if err := s.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
+            e.Logger.Error("Error starting, shutting down moxie proxy server")
             e.Logger.Fatal(err)
-            e.Logger.Fatal("shutting down the server")
+        } else {
+            e.Logger.Info("Started moxie proxy server")
         }
     }()
 
@@ -139,6 +151,8 @@ func main() {
     defer cancel()
     if err := e.Shutdown(ctx); err != nil {
         e.Logger.Fatal(err)
+    } else {
+        e.Logger.Info("Shutting down moxie proxy server")
     }
 }
 
