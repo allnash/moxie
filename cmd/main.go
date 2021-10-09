@@ -94,6 +94,7 @@ func main() {
     assets.Use(middleware.StaticWithConfig(middleware.StaticConfig{
         Root:   os.Getenv("ASSET_DIRECTORY"),
         Browse: true,
+        HTML5: true,
     }))
     // Add to Hosts
     hosts[os.Getenv("ASSET_DOMAIN")] = &models.Host{Echo: assets}
