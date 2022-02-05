@@ -27,6 +27,8 @@ func load() error {
 func main() {
 
     // Create Echo server
+    print("Starting Moxie process")
+    print("Initializing Moxie server")
     e := echo.New()
     e.Logger.SetOutput(&lumberjack.Logger{
         Filename:   "/var/log/moxie/moxie.log",
