@@ -27,8 +27,8 @@ func load() error {
 func main() {
 
     // Create Echo server
-    print("Starting Moxie process")
-    print("Initializing Moxie server")
+    print("Starting Moxie process\n")
+    print("Initializing Moxie server\n")
     e := echo.New()
     e.Logger.SetOutput(&lumberjack.Logger{
         Filename:   "/var/log/moxie/moxie.log",
@@ -37,7 +37,7 @@ func main() {
         MaxAge:     28,   //days
         Compress:   true, // disabled by default
     })
-
+    print("Moxie server initialized\n")
     // Load ENV
     err := load()
     if err != nil {
@@ -143,6 +143,7 @@ func main() {
         } else {
             e.Logger.Info("Started moxie proxy server")
         }
+        print("Moxie server listening\n")
     }()
 
     // Wait for interrupt signal to gracefully shutdown the server with a timeout of 10 seconds.
