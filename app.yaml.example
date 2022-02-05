@@ -1,0 +1,12 @@
+version: "v1"
+services:
+  - service:
+      name: "Assets"
+      type: "static"
+      ingress_url: "http://app.example.com"
+      egress_url:  "/var/www/html"
+  - service:
+      name: "Web Proxy Service"
+      type: "proxy"
+      ingress_url: "http://api.example.com"
+      egress_url: "http://localhost:8000"

@@ -21,3 +21,6 @@
 builds/moxie_osx
 builds/moxie_win
 builds/moxie
+# Moxie sample certs
+server.crt
+server.key

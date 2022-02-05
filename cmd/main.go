@@ -2,14 +2,12 @@ package main
 
 import (
     "context"
-    "crypto/tls"
+    "fmt"
+    "github.com/allnash/moxie/config"
     "github.com/allnash/moxie/models"
-    guuid "github.com/google/uuid"
-    "github.com/joho/godotenv"
+    "github.com/ilyakaznacheev/cleanenv"
     "github.com/labstack/echo/v4"
     "github.com/labstack/echo/v4/middleware"
-    "golang.org/x/crypto/acme"
-    "golang.org/x/crypto/acme/autocert"
     "gopkg.in/natefinch/lumberjack.v2"
     "net/http"
     "net/url"
@@ -18,157 +16,124 @@ import (
     "time"
 )
 
-const AppEnvFilename = "/etc/moxie/app.env"
+const AppYamlFilename = "app.yaml"
+const SSL_PORT = "8443"
 
-func load() error {
-    return godotenv.Load(AppEnvFilename)
+func load() config.Config {
+	var cfg config.Config
+	// read configuration from the file and environment variables
+	if err := cleanenv.ReadConfig(AppYamlFilename, &cfg); err != nil {
+		fmt.Println(err)
+		os.Exit(2)
+	}
+	return cfg
 }
+
+var hosts = map[string]*models.Host{}
 
 func main() {
 
-    // Create Echo server
-    print("Starting Moxie process\n")
-    print("Initializing Moxie server\n")
-    e := echo.New()
-    e.Logger.SetOutput(&lumberjack.Logger{
-        Filename:   "/var/log/moxie/moxie.log",
-        MaxSize:    100, // megabytes
-        MaxBackups: 3,
-        MaxAge:     28,   //days
-        Compress:   true, // disabled by default
-    })
-    print("Moxie server initialized\n")
-    // Load ENV
-    err := load()
-    if err != nil {
-        e.Logger.Error(err)
-    } else {
-        e.Logger.Info("Loading moxie config from /etc/moxie/app.env")
-    }
+	// Load ENV
+	cfg := load()
 
-    // Hosts
-    hosts := map[string]*models.Host{}
-
-    //-----
-    // API
-    //-----
-
-    api := echo.New()
-    api.Pre(middleware.HTTPSRedirect())
-    api.Use(middleware.Logger())
-    api.Use(middleware.Recover())
-    api.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
-        Generator: func() string {
-            return customGenerator()
-        },
-    }))
-    api.Use(middleware.GzipWithConfig(middleware.GzipConfig{
-        Level: 5,
-    }))
-    api.Use(middleware.BodyLimit("10M"))
-    // Setup API proxy
-    apiProxyUrl, err := url.Parse(os.Getenv("API_PROXY_HOST"))
-    if err != nil {
-        e.Logger.Fatal(err)
-    }
-    targets := []*middleware.ProxyTarget{
-        {
-            URL: apiProxyUrl,
-        },
-    }
-    api.Use(middleware.Proxy(middleware.NewRoundRobinBalancer(targets)))
-    // Add to Hosts
-    hosts[os.Getenv("API_DOMAIN")] = &models.Host{Echo: api}
-
-    //------
-    // Asset
-    //------
-
-    assets := echo.New()
-    assets.Pre(middleware.HTTPSRedirect())
-    assets.Use(middleware.Logger())
-    assets.Use(middleware.Recover())
-    assets.Use(middleware.GzipWithConfig(middleware.GzipConfig{
-        Level: 5,
-    }))
-    assets.Use(expiresServerHeader)
-    assets.Use(middleware.BodyLimit("10M"))
-    assets.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-        Root:   os.Getenv("ASSET_DIRECTORY"),
-        Browse: true,
-        HTML5: true,
-    }))
-    // Add to Hosts
-    hosts[os.Getenv("ASSET_DOMAIN")] = &models.Host{Echo: assets}
-
-    // Server
-    e.Use(middleware.Recover())
-    e.Use(middleware.Logger())
-    e.Any("/*", func(c echo.Context) (err error) {
-        req := c.Request()
-        res := c.Response()
-        host := hosts[req.Host]
-
-        if host == nil {
-            err = echo.ErrNotFound
-        } else {
-            host.Echo.ServeHTTP(res, req)
+	// Hosts
+	for _, service := range cfg.Services {
+        // Service Target
+        tenant := echo.New()
+        var targets []*middleware.ProxyTarget
+        tenant.Logger.SetOutput(&lumberjack.Logger{
+            Filename:   cfg.Logfile,
+            MaxSize:    100, // megabytes
+            MaxBackups: 3,
+            MaxAge:     28,   //days
+            Compress:   true, // disabled by default
+        })
+        // Service Config
+		if service.Type == "proxy" {
+            // Web endpoint
+			urlS, err := url.Parse(service.EgressUrl)
+			if err != nil {
+				tenant.Logger.Fatal(err)
+			}
+			targets = append(targets, &middleware.ProxyTarget{
+				URL: urlS,
+			})
+			tenant.Use(middleware.Proxy(middleware.NewRoundRobinBalancer(targets)))
+			tenant.GET("/*", func(c echo.Context) error {
+				return c.String(http.StatusOK, "Tenant:"+c.Request().Host)
+			})
+			hosts[service.IngressUrl+":"+SSL_PORT] = &models.Host{Echo: tenant}
+		} else if service.Type == "static" {
+            // Static endpoint
+            tenant.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+                Level: 5,
+            }))
+            tenant.Use(expiresServerHeader)
+            tenant.Use(middleware.BodyLimit("10M"))
+            tenant.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+                Root:   os.Getenv("ASSET_DIRECTORY"),
+                Browse: true,
+                HTML5:  true,
+            }))
+            // Add to Hosts
+            hosts[service.IngressUrl+":"+SSL_PORT] = &models.Host{Echo: tenant}
         }
+	}
 
-        return
-    })
+	//---------
+	// ROOT
+	//---------
+	server := echo.New()
+	server.Use(middleware.Logger())
+	server.Use(middleware.Recover())
 
-    autoTLSManager := autocert.Manager{
-        Prompt: autocert.AcceptTOS,
-        // Cache certificates to avoid issues with rate limits (https://letsencrypt.org/docs/rate-limits)
-        Cache:      autocert.DirCache("/var/www/.cache"),
-        HostPolicy: autocert.HostWhitelist(os.Getenv("API_DOMAIN"), os.Getenv("ASSET_DOMAIN")),
-    }
+	hosts["localhost:"+SSL_PORT] = &models.Host{Echo: server}
 
-    // Start server
-    go func() {
-        s := http.Server{
-            Addr:    ":443",
-            Handler: e, // set Echo as handler
-            TLSConfig: &tls.Config{
-                //Certificates: nil, // <-- s.ListenAndServeTLS will populate this field
-                GetCertificate: autoTLSManager.GetCertificate,
-                NextProtos:     []string{acme.ALPNProto},
-            },
-            ReadTimeout: 30 * time.Second, // use custom timeouts
-        }
-        if err := s.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
-            e.Logger.Error("Error starting, shutting down moxie proxy server")
-            e.Logger.Fatal(err)
-        } else {
-            e.Logger.Info("Started moxie proxy server")
-        }
-        print("Moxie server listening\n")
-    }()
+	server.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Server")
+	})
 
-    // Wait for interrupt signal to gracefully shutdown the server with a timeout of 10 seconds.
-    // Use a buffered channel to avoid missing signals as recommended for signal.Notify
-    quit := make(chan os.Signal, 1)
-    signal.Notify(quit, os.Interrupt)
-    <-quit
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
-    if err := e.Shutdown(ctx); err != nil {
-        e.Logger.Fatal(err)
-    } else {
-        e.Logger.Info("Shutting down moxie proxy server")
-    }
-}
+	// Server
+	e := echo.New()
+	e.Any("/*", func(c echo.Context) (err error) {
+		req := c.Request()
+		res := c.Response()
+		host := hosts[req.Host]
 
-func customGenerator() string {
-    id := guuid.New()
-    return id.String()
+		if host == nil {
+			err = echo.ErrNotFound
+		} else {
+			host.Echo.ServeHTTP(res, req)
+		}
+
+		return
+	})
+	// 4 Terabyte limit
+	e.Use(middleware.BodyLimit("4T"))
+
+	// Start server with Graceful Shutdown
+	go func() {
+		if err := e.StartTLS(":"+SSL_PORT, "server.crt", "server.key"); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server")
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 10 seconds.
+	// Use a buffered channel to avoid missing signals as recommended for signal.Notify
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
 }
 
 // ServerHeader middleware adds a `Server` header to the response.
 func expiresServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
-    return func(c echo.Context) error {
-        c.Response().Header().Set("Cache-Control", "public, max-age=3600")
-        return next(c)
-    }
+	return func(c echo.Context) error {
+		c.Response().Header().Set("Cache-Control", "public, max-age=3600")
+		return next(c)
+	}
 }

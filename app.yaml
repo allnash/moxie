@@ -1,0 +1,13 @@
+version: "v1"
+log_file: "moxie.log"
+services:
+  - service:
+      name: "Assets"
+      type: "static"
+      ingress_url: "https://app.localhost:8443"
+      egress_url:  "/var/www/html"
+  - service:
+      name: "Web Proxy Service"
+      type: "proxy"
+      ingress_url: "https://api.localhost:8443"
+      egress_url: "http://localhost:8000"
