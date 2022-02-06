@@ -24,3 +24,4 @@ builds/moxie
 # Moxie sample certs
 server.crt
 server.key
+app.yaml

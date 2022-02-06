@@ -1,24 +1,22 @@
 package main
 
 import (
-    "context"
-    "fmt"
-    "github.com/allnash/moxie/config"
-    "github.com/allnash/moxie/models"
-    "github.com/ilyakaznacheev/cleanenv"
-    "github.com/labstack/echo/v4"
-    "github.com/labstack/echo/v4/middleware"
-    "gopkg.in/natefinch/lumberjack.v2"
-    "net/http"
-    "net/url"
-    "os"
-    "os/signal"
-    "time"
+	"context"
+	"fmt"
+	"github.com/allnash/moxie/config"
+	"github.com/allnash/moxie/models"
+	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"time"
 )
 
 const AppYamlFilename = "app.yaml"
-const SSL_PORT = "8443"
-
 
 func load() config.Config {
 	var cfg config.Config
@@ -39,19 +37,19 @@ func main() {
 
 	// Hosts
 	for _, service := range cfg.Services {
-        // Service Target
-        tenant := echo.New()
-        var targets []*middleware.ProxyTarget
-        tenant.Logger.SetOutput(&lumberjack.Logger{
-            Filename:   cfg.Logfile,
-            MaxSize:    100, // megabytes
-            MaxBackups: 3,
-            MaxAge:     28,   //days
-            Compress:   true, // disabled by default
-        })
-        // Service Config
+		// Service Target
+		tenant := echo.New()
+		var targets []*middleware.ProxyTarget
+		tenant.Logger.SetOutput(&lumberjack.Logger{
+			Filename:   cfg.Logfile,
+			MaxSize:    100, // megabytes
+			MaxBackups: 3,
+			MaxAge:     28,   //days
+			Compress:   true, // disabled by default
+		})
+		// Service Config
 		if service.Type == "proxy" {
-            // Web endpoint
+			// Web endpoint
 			urlS, err := url.Parse(service.EgressUrl)
 			if err != nil {
 				tenant.Logger.Fatal(err)
@@ -63,22 +61,22 @@ func main() {
 			tenant.GET("/*", func(c echo.Context) error {
 				return c.String(http.StatusOK, "Tenant:"+c.Request().Host)
 			})
-			hosts[service.IngressUrl] = &models.Host{Echo: tenant}
+			hosts[service.IngressUrl+":"+cfg.SSLPort] = &models.Host{Echo: tenant}
 		} else if service.Type == "static" {
-            // Static endpoint
-            tenant.Use(middleware.GzipWithConfig(middleware.GzipConfig{
-                Level: 5,
-            }))
-            tenant.Use(expiresServerHeader)
-            tenant.Use(middleware.BodyLimit("10M"))
-            tenant.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-                Root:   service.EgressUrl,
-                Browse: true,
-                HTML5:  true,
-            }))
-            // Add to Hosts
-            hosts[service.IngressUrl] = &models.Host{Echo: tenant}
-        }
+			// Static endpoint
+			tenant.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+				Level: 5,
+			}))
+			tenant.Use(expiresServerHeader)
+			tenant.Use(middleware.BodyLimit("10M"))
+			tenant.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+				Root:   service.EgressUrl,
+				Browse: true,
+				HTML5:  true,
+			}))
+			// Add to Hosts
+			hosts[service.IngressUrl+":"+cfg.SSLPort] = &models.Host{Echo: tenant}
+		}
 	}
 
 	//---------
@@ -90,9 +88,7 @@ func main() {
 	server.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "{\"success\":\"ok\"}")
 	})
-	hosts[cfg.StatusPage] = &models.Host{Echo: server}
-
-
+	hosts[cfg.StatusPage+":"+cfg.SSLPort] = &models.Host{Echo: server}
 
 	// Server
 	e := echo.New()
@@ -114,7 +110,7 @@ func main() {
 
 	// Start server with Graceful Shutdown
 	go func() {
-		if err := e.StartTLS(":"+SSL_PORT, "server.crt", "server.key"); err != nil && err != http.ErrServerClosed {
+		if err := e.StartTLS(":"+cfg.SSLPort, "server.crt", "server.key"); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("shutting down the server")
 		}
 	}()
