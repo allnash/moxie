@@ -19,6 +19,7 @@ import (
 const AppYamlFilename = "app.yaml"
 const SSL_PORT = "8443"
 
+
 func load() config.Config {
 	var cfg config.Config
 	// read configuration from the file and environment variables
@@ -62,7 +63,7 @@ func main() {
 			tenant.GET("/*", func(c echo.Context) error {
 				return c.String(http.StatusOK, "Tenant:"+c.Request().Host)
 			})
-			hosts[service.IngressUrl+":"+SSL_PORT] = &models.Host{Echo: tenant}
+			hosts[service.IngressUrl] = &models.Host{Echo: tenant}
 		} else if service.Type == "static" {
             // Static endpoint
             tenant.Use(middleware.GzipWithConfig(middleware.GzipConfig{
@@ -71,12 +72,12 @@ func main() {
             tenant.Use(expiresServerHeader)
             tenant.Use(middleware.BodyLimit("10M"))
             tenant.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-                Root:   os.Getenv("ASSET_DIRECTORY"),
+                Root:   service.EgressUrl,
                 Browse: true,
                 HTML5:  true,
             }))
             // Add to Hosts
-            hosts[service.IngressUrl+":"+SSL_PORT] = &models.Host{Echo: tenant}
+            hosts[service.IngressUrl] = &models.Host{Echo: tenant}
         }
 	}
 
@@ -86,12 +87,12 @@ func main() {
 	server := echo.New()
 	server.Use(middleware.Logger())
 	server.Use(middleware.Recover())
-
-	hosts["localhost:"+SSL_PORT] = &models.Host{Echo: server}
-
 	server.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Server")
+		return c.String(http.StatusOK, "{\"success\":\"ok\"}")
 	})
+	hosts[cfg.StatusPage] = &models.Host{Echo: server}
+
+
 
 	// Server
 	e := echo.New()

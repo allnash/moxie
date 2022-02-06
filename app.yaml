@@ -1,13 +1,17 @@
-version: "v1"
-log_file: "moxie.log"
+---
+version: v1
+log_file: "/Users/nashgadre/workspace/moxie/test1/moxie.log"
+status_page: "localhost:8443"
 services:
-  - service:
-      name: "Assets"
-      type: "static"
-      ingress_url: "https://app.localhost:8443"
-      egress_url:  "/var/www/html"
-  - service:
-      name: "Web Proxy Service"
-      type: "proxy"
-      ingress_url: "https://api.localhost:8443"
-      egress_url: "http://localhost:8000"
+  - name: "Assets 1"
+    type: static
+    ingress_url: "app1.localhost:8443"
+    egress_url: "/Users/nashgadre/workspace/moxie/test1"
+  - name: "Assets 2"
+    type: static
+    ingress_url: "app2.localhost:8443"
+    egress_url: "/Users/nashgadre/workspace/moxie/test2"
+  - name: "Web Proxy Service"
+    type: proxy
+    ingress_url: "api.localhost:8443"
+    egress_url: "http://localhost:8000/admin/"

@@ -2,7 +2,8 @@ package config
 
 type Config struct {
 	Version  string    `yaml:"version"`
-	Logfile   string    `yaml:"logfile"`
+	StatusPage string  `yaml:"status_page"`
+	Logfile   string    `yaml:"log_file"`
 	Services []Service `yaml:"services"`
 }
 
