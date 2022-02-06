@@ -40,13 +40,6 @@ func main() {
 		// Service Target
 		tenant := echo.New()
 		var targets []*middleware.ProxyTarget
-		tenant.Logger.SetOutput(&lumberjack.Logger{
-			Filename:   cfg.Logfile,
-			MaxSize:    100, // megabytes
-			MaxBackups: 3,
-			MaxAge:     28,   //days
-			Compress:   true, // disabled by default
-		})
 		// Service Config
 		if service.Type == "proxy" {
 			// Web endpoint
@@ -83,7 +76,6 @@ func main() {
 	// ROOT
 	//---------
 	server := echo.New()
-	server.Use(middleware.Logger())
 	server.Use(middleware.Recover())
 	server.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "{\"success\":\"ok\"}")
@@ -92,13 +84,21 @@ func main() {
 
 	// Server
 	e := echo.New()
+	e.Use(middleware.Logger())
+	e.Logger.SetOutput(&lumberjack.Logger{
+		Filename:   cfg.Logfile,
+		MaxSize:    100, // megabytes
+		MaxBackups: 3,
+		MaxAge:     28,   //days
+		Compress:   true, // disabled by default
+	})
 	e.Any("/*", func(c echo.Context) (err error) {
 		req := c.Request()
 		res := c.Response()
 		host := hosts[req.Host]
-
 		if host == nil {
 			err = echo.ErrNotFound
+			e.Logger.Info("Resource Not found - " + req.Host )
 		} else {
 			host.Echo.ServeHTTP(res, req)
 		}
