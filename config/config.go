@@ -2,9 +2,9 @@ package config
 
 type Config struct {
 	Version    string    `yaml:"version"`
-	StatusPage string    `yaml:"status_page"`
-	SSLPort    string    `yaml:"ssl_port"`
-	Logfile    string     `yaml:"log_file"`
+	Host	   string    `yaml:"host"`
+	Port       string    `yaml:"port"`
+	Logfile     string    `yaml:"log_file"`
 	Services   []Service `yaml:"services"`
 }
 

@@ -1,7 +1,8 @@
 ---
 version: v1
 log_file: "/var/log/moxie/moxie.log"
-status_page: "localhost:8443"
+host: "localhost"
+port: "9000"
 services:
   - name: "Assets 1"
     type: static

@@ -54,7 +54,7 @@ func main() {
 			tenant.GET("/*", func(c echo.Context) error {
 				return c.String(http.StatusOK, "Tenant:"+c.Request().Host)
 			})
-			hosts[service.IngressUrl+":"+cfg.SSLPort] = &models.Host{Echo: tenant}
+			hosts[service.IngressUrl+":"+cfg.Port] = &models.Host{Echo: tenant}
 		} else if service.Type == "static" {
 			// Static endpoint
 			tenant.Use(middleware.GzipWithConfig(middleware.GzipConfig{
@@ -68,7 +68,7 @@ func main() {
 				HTML5:  true,
 			}))
 			// Add to Hosts
-			hosts[service.IngressUrl+":"+cfg.SSLPort] = &models.Host{Echo: tenant}
+			hosts[service.IngressUrl+":"+cfg.Port] = &models.Host{Echo: tenant}
 		}
 	}
 
@@ -77,10 +77,10 @@ func main() {
 	//---------
 	server := echo.New()
 	server.Use(middleware.Recover())
-	server.GET("/", func(c echo.Context) error {
+	server.GET("/status", func(c echo.Context) error {
 		return c.String(http.StatusOK, "{\"success\":\"ok\"}")
 	})
-	hosts[cfg.StatusPage+":"+cfg.SSLPort] = &models.Host{Echo: server}
+	hosts[cfg.Host+":"+cfg.Port] = &models.Host{Echo: server}
 
 	// Server
 	e := echo.New()
