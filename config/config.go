@@ -1,11 +1,11 @@
 package config
 
 type Config struct {
-	Version    string    `yaml:"version"`
-	Host	   string    `yaml:"host"`
-	Port       string    `yaml:"port"`
-	Logfile     string    `yaml:"log_file"`
-	Services   []Service `yaml:"services"`
+	Version         string    `yaml:"version"`
+	StatusHost      string    `yaml:"status_host"`
+	ProxyListenPort string    `yaml:"proxy_listen_port"`
+	Logfile          string    `yaml:"log_file"`
+	Services        []Service `yaml:"services"`
 }
 
 type Service struct {
