@@ -108,11 +108,18 @@ func main() {
 	// 4 Terabyte limit
 	e.Use(middleware.BodyLimit("4T"))
 
-	// Start server with Graceful Shutdown
+	// Start server with Graceful Shutdown WITH CERT
+	//go func() {
+	//	if err := e.StartTLS(":"+cfg.SSLPort,
+	//		"/etc/moxie/ssl/server.crt",
+	//		"/etc/moxie/ssl/server.key"); err != nil && err != http.ErrServerClosed {
+	//		e.Logger.Fatal("shutting down the server")
+	//	}
+	//}()
+
+	// Start server with Graceful Shutdown WITHOUT CERT
 	go func() {
-		if err := e.StartTLS(":"+cfg.SSLPort,
-			"/etc/moxie/ssl/server.crt",
-			"/etc/moxie/ssl/server.key"); err != nil && err != http.ErrServerClosed {
+		if err := e.Start(":9000"); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("shutting down the server")
 		}
 	}()
