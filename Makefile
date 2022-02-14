@@ -32,7 +32,7 @@ install_linux:
 	@mkdir -p /etc/moxie/ssl
 	@mkdir -p /var/log/moxie
 	@mkdir -p /var/www/html
-	@cp -n app.yaml /etc/moxie
+	@cp -n app.yaml.example /etc/moxie
 	@cp -n certgen.sh /etc/moxie/ssl
 	@printf "[Unit]\nDescription=Moxie the Reverse Proxy\n\n[Service]\nType=simple\nRestart=always\n\RestartSec=5s\nExecStart=/usr/sbin/moxie\n\n[Install]\nWantedBy=multi-user.target\n" > /lib/systemd/system/moxie-proxy.service
 	@echo "Start Moxie service using"
