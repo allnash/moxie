@@ -6,12 +6,12 @@ services:
   - name: "Assets 1"
     type: static
     ingress_url: "app1.localhost:8443"
-    egress_url: "/var/www/html/test1"
+    egress_url: "/var/www/html/"
   - name: "Assets 2"
     type: static
     ingress_url: "app2.localhost:8443"
-    egress_url: "/var/www/html/test2"
+    egress_url: "/var/www/html/"
   - name: "Web Proxy Service"
     type: proxy
     ingress_url: "api.localhost:8443"
-    egress_url: "http://localhost:8000/admin/"
+    egress_url: "http://localhost:8000/"

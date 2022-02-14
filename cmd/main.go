@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const AppYamlFilename = "app.yaml"
+const AppYamlFilename = "/etc/moxie/app.yaml"
 
 func load() config.Config {
 	var cfg config.Config
@@ -98,7 +98,7 @@ func main() {
 		host := hosts[req.Host]
 		if host == nil {
 			err = echo.ErrNotFound
-			e.Logger.Info("Resource Not found - " + req.Host )
+			e.Logger.Info("Resource Not found - " + req.Host)
 		} else {
 			host.Echo.ServeHTTP(res, req)
 		}
@@ -110,7 +110,9 @@ func main() {
 
 	// Start server with Graceful Shutdown
 	go func() {
-		if err := e.StartTLS(":"+cfg.SSLPort, "server.crt", "server.key"); err != nil && err != http.ErrServerClosed {
+		if err := e.StartTLS(":"+cfg.SSLPort,
+			"/etc/moxie/ssl/server.crt",
+			"/etc/moxie/ssl/server.key"); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("shutting down the server")
 		}
 	}()
