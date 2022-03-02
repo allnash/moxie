@@ -29,6 +29,7 @@ func load() config.Config {
 }
 
 var hosts = map[string]*models.Host{}
+var redirectUrls = map[string]*models.RedirectUrl{}
 
 func main() {
 
@@ -68,6 +69,20 @@ func main() {
 				HTML5:  true,
 			}))
 			// Add to Hosts
+			hosts[service.IngressUrl] = &models.Host{Echo: tenant}
+		} else if service.Type == "redirect" {
+			// Redirect endpoint
+			urlS, err := url.Parse(service.EgressUrl)
+			if err != nil {
+				tenant.Logger.Fatal(err)
+			}
+			redirectUrls[service.IngressUrl] = &models.RedirectUrl{
+				URL: urlS,
+			}
+			tenant.Any("/*", func(c echo.Context) error {
+				redirectUrl :=redirectUrls[c.Request().Host].URL.String()
+				return c.Redirect(http.StatusMovedPermanently, redirectUrl)
+			})
 			hosts[service.IngressUrl] = &models.Host{Echo: tenant}
 		}
 	}

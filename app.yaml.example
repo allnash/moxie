@@ -1,18 +1,22 @@
 ---
 version: v1
-log_file: "/var/log/moxie/moxie.log"
+log_file: "/var/log/moxie.log"
 status_host: "192.168.1.2"
 proxy_listen_port: "9000"
 services:
   - name: "Assets 1"
     type: static
-    ingress_url: "app1.localhost"
-    egress_url: "/var/www/html/"
+    ingress_url: "app1.localhost:9000"
+    egress_url: "/var/www/html1"
   - name: "Assets 2"
     type: static
-    ingress_url: "app2.localhost"
-    egress_url: "/var/www/html/"
+    ingress_url: "app2.localhost:9000"
+    egress_url: "/var/www/html2"
+  - name: "Redirect 3 to 1"
+    type: redirect
+    ingress_url: "app3.localhost:9000"
+    egress_url: "http://app1.localhost:9000"
   - name: "Web Proxy Service"
     type: proxy
-    ingress_url: "api.localhost"
+    ingress_url: "api.localhost:9000"
     egress_url: "http://localhost:8000/"
