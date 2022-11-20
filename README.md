@@ -1,4 +1,9 @@
-# Go Moxie the Proxy
+
+( Please see the new repo that takes this project to the next level)
+
+https://github.com/emyt-io/emyt
+
+# Go Moxie the Proxy (DEPRECATED)
 Alternative Reverse Proxy to Nginx for Python Django written in superb `go`
 
 #### Why?
