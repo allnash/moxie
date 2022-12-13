@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-const AppYamlFilename = "app.yaml"
+const AppYamlFilename = "/etc/moxie/app.yaml"
 
 func load() config.Config {
 	var cfg config.Config
