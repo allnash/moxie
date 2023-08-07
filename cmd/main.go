@@ -65,11 +65,8 @@ func main() {
 			tenant.Use(middleware.BodyLimit("25M"))
 			tenant.Use(middleware.SecureWithConfig(
 				middleware.SecureConfig{
-					XSSProtection:         "1; mode=block",
-					ContentTypeNosniff:    "nosniff",
-					XFrameOptions:         service.XFrameOptions,
-					HSTSMaxAge:            service.HSTSMaxAge,
-					ContentSecurityPolicy: "",
+					XFrameOptions: service.XFrameOptions,
+					HSTSMaxAge:    service.HSTSMaxAge,
 				}))
 			tenant.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 				Root:   service.EgressUrl,
