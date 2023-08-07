@@ -69,7 +69,7 @@ func main() {
 					ContentTypeNosniff:    "nosniff",
 					XFrameOptions:         service.XFrameOptions,
 					HSTSMaxAge:            service.HSTSMaxAge,
-					ContentSecurityPolicy: "default-src 'self'",
+					ContentSecurityPolicy: "",
 				}))
 			tenant.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 				Root:   service.EgressUrl,
