@@ -62,7 +62,15 @@ func main() {
 				Level: 5,
 			}))
 			tenant.Use(expiresServerHeader)
-			tenant.Use(middleware.BodyLimit("10M"))
+			tenant.Use(middleware.BodyLimit("25M"))
+			tenant.Use(middleware.SecureWithConfig(
+				middleware.SecureConfig{
+					XSSProtection:         "1; mode=block",
+					ContentTypeNosniff:    "nosniff",
+					XFrameOptions:         service.XFrameOptions,
+					HSTSMaxAge:            service.HSTSMaxAge,
+					ContentSecurityPolicy: "default-src 'self'",
+				}))
 			tenant.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 				Root:   service.EgressUrl,
 				Browse: true,

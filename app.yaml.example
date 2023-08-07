@@ -8,10 +8,16 @@ services:
     type: static
     ingress_url: "app1.localhost"
     egress_url: "/var/www/html/"
+    # optional headers for preventing click jacking, default is "SAMEORIGIN"
+    # "SAMEORIGIN" - The page can only be displayed in a frame on the same origin as the page itself.
+    # "DENY" - The page cannot be displayed in a frame, regardless of the site attempting to do so.
+    # "ALLOW-FROM uri" - The page can only be displayed in a frame on the specified origin.
+    x_frame_options: "SAMEORIGIN"
   - name: "Assets 2"
     type: static
     ingress_url: "app2.localhost"
     egress_url: "/var/www/html/"
+    # x_frame_options: "DENY"
   - name: "Web Proxy Service"
     type: proxy
     ingress_url: "api.localhost"
